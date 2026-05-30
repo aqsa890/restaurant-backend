@@ -10,6 +10,7 @@ const router = express.Router();
 
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");
+const menuController = require("../controllers/menuController");
 
 router.post("/", authController.authCustomer);
 // GET /api/customer/get-info - accepts `Authorization: Bearer <token>` OR `?email=`
@@ -19,3 +20,7 @@ router.get("/get-info", auth({ required: false }), authController.getCustomerInf
 router.post("/logout", auth({ required: true }), authController.logoutCustomer);
 
 module.exports = router;
+
+// Menu routes merged here so `/api/customer/menu` is available
+// Public endpoint: GET /api/customer/menu/ -> proxies to restaurant service
+router.get("/menu/", menuController.getAllMenusPublic);

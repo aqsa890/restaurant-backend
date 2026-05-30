@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const RevokedToken = require("../models/revokedToken.model");
 
+
 // helper: hash email (input should be normalized: trimmed + lowercase)
 const hashEmail = (email) => {
   const normalized = (email || "").toString().trim().toLowerCase();
@@ -142,3 +143,4 @@ exports.getCustomerInfo = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
