@@ -24,3 +24,17 @@ module.exports = router;
 // Menu routes merged here so `/api/customer/menu` is available
 // Public endpoint: GET /api/customer/menu/ -> proxies to restaurant service
 router.get("/menu/", menuController.getAllMenusPublic);
+
+// NOTE: `placeOrder` is implemented in `authController` in this project.
+// Route should reference the existing handler to avoid undefined errors.
+// Use a safe wrapper to avoid crashing if the handler isn't exported correctly.
+router.post(
+	"/place-order",
+	auth({ required: true }),
+	(req, res, next) => {
+		if (authController && typeof authController.placeOrder === 'function') {
+			return authController.placeOrder(req, res, next);
+		}
+		return res.status(500).json({ message: "placeOrder handler not available" });
+	}
+);

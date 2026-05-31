@@ -25,3 +25,13 @@ app.use("/api/customer", authRoutes);
 app.listen(5001, () => {
   console.log("Customer service running on 5001");
 });
+
+// Attempt RabbitMQ connection on startup for visibility (non-blocking)
+try {
+  const amqp = require('amqplib');
+  amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost')
+    .then(() => console.log('RabbitMQ connected (customer service)'))
+    .catch((e) => console.warn('RabbitMQ connection failed (customer service):', e && (e.message || e)));
+} catch (e) {
+  console.warn('amqplib not installed; skipping RabbitMQ startup check');
+}

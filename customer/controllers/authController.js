@@ -11,6 +11,7 @@ const Customer = require("../models/customer.model");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const RevokedToken = require("../models/revokedToken.model");
+const { publishNewOrder } = require('../rabbitmq/publisher');
 
 
 // helper: hash email (input should be normalized: trimmed + lowercase)
@@ -143,4 +144,54 @@ exports.getCustomerInfo = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.placeOrder = async (req, res) => {
+  // This is a placeholder implementation. In a real application, you would:
+  // 1. Validate the order details in req.body (e.g., items, quantities, payment info).
+  // 2. Create an Order record in the database linked to req.user.id.
+  // 3. Possibly interact with a payment gateway.
+  // 4. Return order confirmation details.
+
+  const customerId = req.user && req.user.id;
+  if (!customerId) {
+    return res.status(401).json({ message: "Unauthorized: no customer ID" });
+  }
+
+  // Echo back the received order details and include customer id.
+  const orderDetails = req.body || {};
+
+  const resp = {
+    message: "Order placed successfully",
+    order: orderDetails,
+    customerId,
+  };
+
+  // Publish to RabbitMQ (best-effort, do not fail the request if broker is down)
+  (async () => {
+    try {
+      const payload = { customerId, order: orderDetails, createdAt: new Date().toISOString() };
+      await publishNewOrder(payload);
+      console.log('Published new order to RabbitMQ (customer service)');
+    } catch (e) {
+      console.warn('Failed to publish new order (customer service):', e && (e.message || e));
+    }
+  })();
+
+  // If request content type isn't JSON, include a hint (clients like Postman
+  // sometimes omit the `Content-Type: application/json` header which leaves
+  // `req.body` empty when `express.json()` doesn't run).
+  try {
+    if (!req.is || !req.is('application/json')) {
+      resp.note = 'Request Content-Type is not application/json; body may be empty.';
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  res.json(resp);
+  
+}
+
+// Ensure explicit export on module.exports in case of runtime require quirks
+module.exports.placeOrder = exports.placeOrder;
 
